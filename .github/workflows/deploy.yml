@@ -27,7 +27,7 @@ jobs:
         TCB_SECRETKEY: ${{ secrets.TCB_SECRETKEY }}
         TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
       run: |
-        tcb login --key
+        tcb login --apiKeyId "$TCB_SECRETID" --apiKey "$TCB_SECRETKEY"
         echo "授权完成"
     
     - name: Deploy Cloud Functions
