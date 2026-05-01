@@ -3,7 +3,7 @@ name: Deploy to WeChat Cloud
 on:
   push:
     branches: [ main, master ]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -18,32 +18,14 @@ jobs:
       with:
         node-version: '18'
     
-    - name: Install WeChat Cloud CLI
-      run: npm install -g @cloudbase/cli
-    
-    - name: Authorize WeChat Cloud
+    - name: Install and Deploy
       env:
         TCB_SECRETID: ${{ secrets.TCB_SECRETID }}
         TCB_SECRETKEY: ${{ secrets.TCB_SECRETKEY }}
         TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
       run: |
+        npm install -g @cloudbase/cli
         tcb login --apiKeyId "$TCB_SECRETID" --apiKey "$TCB_SECRETKEY"
-        echo "授权完成"
-    
-    - name: Deploy Cloud Functions
-      env:
-        TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
-      run: |
-        cd cloud-functions/analyzeStock
-        tcb fn deploy analyzeStock -e $TCB_ENV_ID
-        echo "云函数部署完成"
-    
-    - name: Deploy H5 Page to Static Hosting
-      env:
-        TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
-      run: |
-        tcb hosting deploy index-v2.html -e $TCB_ENV_ID
-        echo "H5页面部署完成"
-    
-    - name: Deployment Complete
-      run: echo "🎉 部署完成！"
+        cd cloud-functions/analyzeStock && tcb fn deploy analyzeStock -e $TCB_ENV_ID
+        tcb hosting deploy H5页面/index.html -e $TCB_ENV_ID
+        echo "🎉 部署完成！"
