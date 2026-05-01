@@ -1,0 +1,49 @@
+name: Deploy to WeChat Cloud
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install WeChat Cloud CLI
+      run: npm install -g @cloudbase/cli
+    
+    - name: Authorize WeChat Cloud
+      env:
+        TCB_SECRETID: ${{ secrets.TCB_SECRETID }}
+        TCB_SECRETKEY: ${{ secrets.TCB_SECRETKEY }}
+        TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
+      run: |
+        tcb login --key
+        echo "授权完成"
+    
+    - name: Deploy Cloud Functions
+      env:
+        TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
+      run: |
+        cd cloud-functions/analyzeStock
+        tcb fn deploy analyzeStock -e $TCB_ENV_ID
+        echo "云函数部署完成"
+    
+    - name: Deploy H5 Page to Static Hosting
+      env:
+        TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
+      run: |
+        tcb hosting deploy index-v2.html -e $TCB_ENV_ID
+        echo "H5页面部署完成"
+    
+    - name: Deployment Complete
+      run: echo "🎉 部署完成！"

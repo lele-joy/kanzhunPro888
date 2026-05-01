@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>个股扫雷 - 技术分析版</title>
+  <style>
+    :root {
+      /* 新配色方案 - 科技蓝+金色点缀 */
+      --primary: #00D4FF;
+      --primary-light: #4DE8FF;
+      --primary-dark: #00A8CC;
+      --accent: #FFD700;
+      --accent-glow: rgba(255, 215, 0, 0.3);
+      --bg-dark: #0A0E17;
+      --bg-card: rgba(255, 255, 255, 0.03);
+      --bg-glass: rgba(255, 255, 255, 0.05);
+      --text-primary: #FFFFFF;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-muted: rgba(255, 255, 255, 0.4);
+      --border: rgba(0, 212, 255, 0.2);
+      --border-glow: rgba(0, 212, 255, 0.4);
+      --success: #00FF88;
+      --warning: #FFB800;
+      --danger: #FF4757;
+      --bullish: #00FF88;
+      --bearish: #FF4757;
+      --neutral: #FFB800;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: var(--bg-dark);
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--text-primary);
+    }
+
+    /* 背景动效 - 粒子网格 */
+    .bg-effects {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .bg-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridMove 20s linear infinite;
+    }
+
+    @keyframes gridMove {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(40px, 40px); }
+    }
+
+    .bg-glow {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.15;
+      animation: pulse 8s ease-in-out infinite;
+    }
+
+    .bg-glow-1 {
+      background: var(--primary);
+      top: -200px;
+      right: -150px;
+    }
+
+    .bg-glow-2 {
+      background: var(--accent);
+      bottom: -200px;
+      left: -150px;
+      animation-delay: -4s;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.15; }
+      50% { transform: scale(1.1); opacity: 0.2; }
+    }
+
+    /* 粒子效果 */
+    .particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--primary);
+      border-radius: 50%;
+      opacity: 0.6;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+      50% { transform: translateY(-30px) scale(1.2); opacity: 1; }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+      min-height: 100vh;
+    }
+
+    /* 头部 */
+    .header {
+      text-align: center;
+      padding: 50px 0 40px;
+      animation: fadeInDown 0.8s ease;
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .logo-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 40px rgba(0, 212, 255, 0.4);
+      animation: logoGlow 3s ease-in-out infinite, rotateIn 0.8s ease;
+      position: relative;
+    }
+
+    @keyframes logoGlow {
+      0%, 100% { box-shadow: 0 0 40px rgba(0, 212, 255, 0.4); }
+      50% { box-shadow: 0 0 60px rgba(0, 212, 255, 0.6), 0 0 80px rgba(0, 212, 255, 0.3); }
+    }
+
+    @keyframes rotateIn {
+      from {
+        opacity: 0;
+        transform: scale(0.5) rotate(-180deg);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+      }
+    }
+
+    .logo-icon::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 26px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      z-index: -1;
+      opacity: 0.5;
+      animation: borderGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes borderGlow {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.8; }
+    }
+
+    .logo-icon svg {
+      width: 44px;
+      height: 44px;
+      fill: white;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--text-primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: var(--text-muted);
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+
+    /* 搜索区域 */
+    .search-section {
+      margin-bottom: 24px;
+      animation: fadeInUp 0.8s ease 0.2s both;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .search-box {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px;
+      backdrop-filter: blur(20px);
+      transition: all 0.4s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .search-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .search-box:focus-within::before {
+      left: 100%;
+    }
+
+    .search-box:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 30px rgba(0, 212, 255, 0.2);
+    }
+
+    .search-box input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 18px 24px;
+      font-size: 16px;
+      color: var(--text-primary);
+      transition: color 0.3s ease;
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border: none;
+      border-radius: 16px;
+      padding: 18px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: all 0.4s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 2px;
+    }
+
+    .search-btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.6s ease, height 0.6s ease;
+    }
+
+    .search-btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .search-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
+    }
+
+    .search-btn:active {
+      transform: translateY(-1px);
+    }
+
+    .search-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .search-btn svg {
+      width: 22px;
+      height: 22px;
+      fill: currentColor;
+      position: relative;
+      z-index: 1;
+    }
+
+    .search-btn span {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* 快捷搜索标签 */
+    .quick-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .quick-tag {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .quick-tag::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--primary-light));
+      transition: left 0.3s ease;
+      z-index: 0;
+    }
+
+    .quick-tag span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .quick-tag:hover::before {
+      left: 0;
+    }
+
+    .quick-tag:hover {
+      color: white;
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    /* 分析结果区域 */
+    .result-section {
+      display: none;
+    }
+
+    .result-section.show {
+      display: block;
+      animation: slideUp 0.6s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 股票信息卡片 */
+    .stock-info {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stock-info::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+    }
+
+    .stock-info-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .stock-name {
+      font-size: 26px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--text-primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stock-code {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      padding: 4px 12px;
+      border-radius: 8px;
+      margin-left: 12px;
+      font-family: monospace;
+    }
+
+    .stock-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* 趋势标签 */
+    .trend-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      animation: badgePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes badgePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .trend-badge.bullish {
+      background: rgba(0, 255, 136, 0.15);
+      color: var(--bullish);
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+    }
+
+    .trend-badge.bearish {
+      background: rgba(255, 71, 87, 0.15);
+      color: var(--bearish);
+      box-shadow: 0 0 20px rgba(255, 71, 87, 0.2);
+    }
+
+    .trend-badge.neutral {
+      background: rgba(255, 184, 0, 0.15);
+      color: var(--neutral);
+      box-shadow: 0 0 20px rgba(255, 184, 0, 0.2);
+    }
+
+    .trend-badge svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* 综合评分 */
+    .overall-score {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .score-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .score-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--primary);
+      text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+      min-width: 60px;
+    }
+
+    .score-bar {
+      flex: 1;
+      height: 10px;
+      background: var(--bg-glass);
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .score-bar::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, var(--danger), var(--warning), var(--success));
+      opacity: 0.3;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 5px;
+      background: linear-gradient(90deg, var(--danger), var(--warning) 50%, var(--success));
+      position: relative;
+      transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+    }
+
+    .score-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+      animation: shimmer 2s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* 操作策略卡片 */
+    .action-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(20px);
+    }
+
+    .action-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .action-title {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .action-title svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--primary);
+    }
+
+    .action-badge {
+      padding: 10px 24px;
+      border-radius: 24px;
+      font-size: 18px;
+      font-weight: 700;
+      animation: actionPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes actionPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+
+    .action-badge.buy {
+      background: rgba(0, 255, 136, 0.2);
+      color: var(--success);
+      border: 2px solid var(--success);
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+    }
+
+    .action-badge.sell {
+      background: rgba(255, 71, 87, 0.2);
+      color: var(--danger);
+      border: 2px solid var(--danger);
+      box-shadow: 0 0 30px rgba(255, 71, 87, 0.3);
+    }
+
+    .action-badge.hold {
+      background: rgba(255, 184, 0, 0.2);
+      color: var(--warning);
+      border: 2px solid var(--warning);
+      box-shadow: 0 0 30px rgba(255, 184, 0, 0.3);
+    }
+
+    .action-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .action-item {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 16px 12px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .action-item:hover {
+      transform: translateY(-3px);
+      background: rgba(0, 212, 255, 0.1);
+    }
+
+    .action-item-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .action-item-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .action-condition {
+      margin-top: 16px;
+      padding: 14px;
+      background: var(--bg-card);
+      border-radius: 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      border-left: 3px solid var(--primary);
+    }
+
+    /* 维度分析 */
+    .dimensions-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(20px);
+    }
+
+    .dimensions-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dimensions-title svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--primary);
+    }
+
+    .dimension-item {
+      margin-bottom: 16px;
+      animation: fadeInRight 0.5s ease both;
+    }
+
+    .dimension-item:nth-child(1) { animation-delay: 0.1s; }
+    .dimension-item:nth-child(2) { animation-delay: 0.2s; }
+    .dimension-item:nth-child(3) { animation-delay: 0.3s; }
+    .dimension-item:nth-child(4) { animation-delay: 0.4s; }
+    .dimension-item:nth-child(5) { animation-delay: 0.5s; }
+    .dimension-item:nth-child(6) { animation-delay: 0.6s; }
+
+    @keyframes fadeInRight {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .dimension-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .dimension-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .dimension-name {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .dimension-score {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .dimension-bar {
+      height: 8px;
+      background: var(--bg-glass);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .dimension-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .dimension-bar-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      animation: dimensionShimmer 2s ease-in-out infinite;
+    }
+
+    @keyframes dimensionShimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .dimension-analysis {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      line-height: 1.6;
+      padding-left: 4px;
+    }
+
+    /* 总结报告 */
+    .summary-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(20px);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .summary-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent), var(--primary));
+    }
+
+    .summary-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .summary-title svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--accent);
+    }
+
+    .summary-content {
+      font-size: 14px;
+      line-height: 1.9;
+      color: var(--text-secondary);
+    }
+
+    /* 风险提示 */
+    .risk-card {
+      background: rgba(255, 71, 87, 0.08);
+      border: 1px solid rgba(255, 71, 87, 0.2);
+      border-radius: 24px;
+      padding: 24px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .risk-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--danger);
+      animation: riskGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes riskGlow {
+      0%, 100% { box-shadow: 0 0 10px var(--danger); }
+      50% { box-shadow: 0 0 20px var(--danger); }
+    }
+
+    .risk-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--danger);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .risk-title svg {
+      width: 20px;
+      height: 20px;
+      fill: var(--danger);
+    }
+
+    .risk-content {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+
+    /* 免责声明 */
+    .disclaimer {
+      margin-top: 28px;
+      padding: 18px;
+      background: rgba(0, 212, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+
+    .disclaimer p {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    /* 加载动画 */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 14, 23, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .loading-overlay.show {
+      display: flex;
+    }
+
+    .loading-content {
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      position: relative;
+    }
+
+    .loading-spinner::before,
+    .loading-spinner::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+    }
+
+    .loading-spinner::before {
+      width: 100%;
+      height: 100%;
+      border: 4px solid transparent;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-spinner::after {
+      width: 75%;
+      height: 75%;
+      top: 12.5%;
+      left: 12.5%;
+      border: 4px solid transparent;
+      border-bottom-color: var(--accent);
+      animation: spin 0.8s linear infinite reverse;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-ring {
+      position: absolute;
+      width: 55%;
+      height: 55%;
+      top: 22.5%;
+      left: 22.5%;
+      border: 3px solid transparent;
+      border-left-color: var(--primary-light);
+      border-radius: 50%;
+      animation: spin 1.5s linear infinite reverse;
+    }
+
+    .loading-text {
+      color: var(--text-secondary);
+      font-size: 15px;
+      margin-bottom: 8px;
+    }
+
+    .loading-stock {
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .loading-dots {
+      display: inline-block;
+    }
+
+    .loading-dots::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+      100% { content: ''; }
+    }
+
+    /* 错误提示 */
+    .error-toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: var(--danger);
+      color: white;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 14px;
+      z-index: 200;
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 30px rgba(255, 71, 87, 0.4);
+    }
+
+    .error-toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Demo提示 */
+    .demo-hint {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* 响应式 */
+    @media (max-width: 380px) {
+      .header h1 {
+        font-size: 26px;
+      }
+      
+      .action-details {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      
+      .action-item {
+        padding: 12px 8px;
+      }
+      
+      .action-item-value {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 背景动效 -->
+  <div class="bg-effects">
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <div class="container">
+    <!-- 头部 -->
+    <div class="header">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3.5 18.5l6-6 4 4 8-8v3l-8 8-4-4-6 6V18.5z"/>
+          <path d="M9.5 9.5L12 12"/>
+        </svg>
+      </div>
+      <h1>个股扫雷</h1>
+      <p>技术分析 · 智能研判</p>
+    </div>
+
+    <!-- 搜索区域 -->
+    <div class="search-section">
+      <div class="search-box">
+        <input type="text" id="stockInput" placeholder="输入股票名称或代码，如：上证指数 / 贵州茅台" autocomplete="off">
+      </div>
+      
+      <button class="search-btn" id="analyzeBtn" onclick="analyzeStock()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/>
+        </svg>
+        <span>开始分析</span>
+      </button>
+
+      <div class="quick-tags">
+        <div class="quick-tag" onclick="quickSelect('大盘')"><span>大盘研判</span></div>
+        <div class="quick-tag" onclick="quickSelect('上证指数')"><span>上证指数</span></div>
+        <div class="quick-tag" onclick="quickSelect('创业板')"><span>创业板</span></div>
+        <div class="quick-tag" onclick="quickSelect('贵州茅台')"><span>贵州茅台</span></div>
+        <div class="quick-tag" onclick="quickSelect('宁德时代')"><span>宁德时代</span></div>
+      </div>
+    </div>
+
+    <!-- 分析结果区域 -->
+    <div class="result-section" id="resultSection">
+      
+      <!-- 股票信息 -->
+      <div class="stock-info">
+        <div class="stock-info-header">
+          <div class="stock-meta">
+            <span class="stock-name" id="stockName">大盘</span>
+            <span class="stock-code" id="stockCode">-</span>
+          </div>
+          <div class="trend-badge neutral" id="trendBadge">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2v20M2 12l10 10 10-10"/>
+            </svg>
+            <span id="trendText">震荡</span>
+          </div>
+        </div>
+        <div class="overall-score">
+          <span class="score-label">综合评分</span>
+          <span class="score-value" id="overallScore">60</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" id="scoreBarFill" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作策略 -->
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-title">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            操作策略
+          </div>
+          <div class="action-badge hold" id="actionBadge">持有</div>
+        </div>
+        <div class="action-details">
+          <div class="action-item">
+            <div class="action-item-label">入场价</div>
+            <div class="action-item-value" id="entryPrice">-</div>
+          </div>
+          <div class="action-item">
+            <div class="action-item-label">止损价</div>
+            <div class="action-item-value" id="stopLoss" style="color: var(--danger);">-</div>
+          </div>
+          <div class="action-item">
+            <div class="action-item-label">目标价</div>
+            <div class="action-item-value" id="targetPrice">-</div>
+          </div>
+        </div>
+        <div class="action-condition" id="actionCondition">
+          请查看分析详情
+        </div>
+      </div>
+
+      <!-- 维度分析 -->
+      <div class="dimensions-card">
+        <div class="dimensions-title">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 3v18h18M9 17V9m4 8V5m4 12v-6"/>
+          </svg>
+          六维技术分析
+        </div>
+        <div id="dimensionsContainer">
+          <!-- 动态生成 -->
+        </div>
+      </div>
+
+      <!-- 总结报告 -->
+      <div class="summary-card">
+        <div class="summary-title">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+          </svg>
+          综合研判
+        </div>
+        <div class="summary-content" id="summaryContent">
+          分析中...
+        </div>
+      </div>
+
+      <!-- 风险提示 -->
+      <div class="risk-card" id="riskCard">
+        <div class="risk-title">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
+          </svg>
+          风险提示
+        </div>
+        <div class="risk-content" id="riskContent">
+          暂无风险提示
+        </div>
+      </div>
+
+      <!-- 免责声明 -->
+      <div class="disclaimer">
+        <p>免责声明：本工具基于 AI 技术分析，仅供参考和学习交流使用，不构成任何投资建议。投资有风险，决策需谨慎，请根据自身情况做出判断。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 加载动画 -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="loading-spinner">
+        <div class="loading-ring"></div>
+      </div>
+      <div class="loading-text">AI 正在分析中<span class="loading-dots"></span></div>
+      <div class="loading-stock" id="loadingStock">大盘</div>
+    </div>
+  </div>
+
+  <!-- 错误提示 -->
+  <div class="error-toast" id="errorToast"></div>
+
+  <script>
+    // ==================== 配置 ====================
+    // 是否使用流式接口（true=更快的用户体验）
+    const USE_STREAMING = false;
+    // 微信云开发模式（上线后改为true）
+    const USE_WECHAT_CLOUD = true;
+    // 本地模式（开发调试用）
+    const USE_DEMO_MODE = false;
+    const API_BASE_URL = window.location.origin;
+    
+    // ==================== 粒子效果 ====================
+    function createParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 15; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 6 + 's';
+        particle.style.animationDuration = (4 + Math.random() * 4) + 's';
+        container.appendChild(particle);
+      }
+    }
+    createParticles();
+
+    // ==================== 模拟数据 ====================
+    const mockResults = {
+      '大盘': {
+        stock: '上证指数',
+        code: '000001',
+        trend: 'bullish',
+        trendText: '多头',
+        overallScore: 68,
+        dimensions: [
+          { name: '大盘研判', score: 72, analysis: '指数突破均线压制，短期趋势向好，上方关注3400压力' },
+          { name: '量能分析', score: 65, analysis: '成交量温和放大，量价配合良好，但需观察持续性' },
+          { name: '板块轮动', score: 70, analysis: '科技、消费板块轮动，资金活跃度提升' },
+          { name: '个股分析', score: 68, analysis: '结构性行情为主，精选个股机会' },
+          { name: '操作策略', score: 70, analysis: '轻仓参与，控制仓位在5成以内' },
+          { name: '风险提示', score: 40, analysis: '外围市场波动、地缘政治风险仍需关注' }
+        ],
+        summary: '市场短期维持震荡偏强格局，结构性机会可期。建议控制仓位，精选热点板块个股为主。',
+        action: '持有',
+        actionCondition: '等待回调确认后可考虑加仓，严格止损',
+        entryPrice: '观望',
+        stopLoss: '-',
+        targetPrice: '-'
+      }
+    };
+
+    // 快捷选择
+    function quickSelect(stock) {
+      document.getElementById('stockInput').value = stock;
+      analyzeStock();
+    }
+
+    // 云函数模式下的进度文案（循环显示）
+    const CLOUD_PROGRESS_MESSAGES = [
+      '正在分析大盘走势...',
+      '正在分析量能变化...',
+      '正在追踪板块轮动...',
+      '正在诊断个股形态...',
+      '正在制定操作策略...',
+      '正在评估风险因素...',
+      '正在生成分析报告...'
+    ];
+
+    // 分析股票（支持流式 + 云函数进度提示）
+    async function analyzeStock() {
+      const input = document.getElementById('stockInput').value.trim() || '大盘';
+      
+      // 显示加载
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      const loadingStock = document.getElementById('loadingStock');
+      const loadingText = loadingOverlay.querySelector('.loading-text');
+      loadingStock.textContent = input;
+      loadingOverlay.classList.add('show');
+
+      // 进度文案循环变量
+      let messageIndex = 0;
+      let messageInterval = null;
+      
+      try {
+        let result;
+        
+        if (USE_DEMO_MODE) {
+          // Demo模式
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          result = mockResults[input] || mockResults['大盘'];
+          renderResult(result);
+        } else if (USE_STREAMING && !USE_WECHAT_CLOUD) {
+          // 本地流式模式 - 显示真实流式进度
+          result = await analyzeStockStream(input);
+          renderResult(result);
+        } else if (USE_WECHAT_CLOUD) {
+          // 云函数模式 - 显示友好进度提示
+          messageInterval = setInterval(() => {
+            if (loadingText) {
+              loadingText.innerHTML = `${CLOUD_PROGRESS_MESSAGES[messageIndex % CLOUD_PROGRESS_MESSAGES.length]}<span class="loading-dots"></span>`;
+              messageIndex++;
+            }
+          }, 800);  // 每800ms切换一条进度提示
+          
+          result = await callWechatCloud(input);
+          renderResult(result);
+        } else {
+          // 本地API调用（非流式）
+          messageInterval = setInterval(() => {
+            if (loadingText) {
+              loadingText.innerHTML = `${CLOUD_PROGRESS_MESSAGES[messageIndex % CLOUD_PROGRESS_MESSAGES.length]}<span class="loading-dots"></span>`;
+              messageIndex++;
+            }
+          }, 800);
+          
+          result = await analyzeStockNormal(input);
+          renderResult(result);
+        }
+
+      } catch (error) {
+        console.error('分析失败:', error);
+        showError(error.message || '网络错误，请稍后重试');
+        renderResult(mockResults['大盘']);
+      }
+
+      // 清理进度循环
+      if (messageInterval) {
+        clearInterval(messageInterval);
+      }
+      loadingOverlay.classList.remove('show');
+    }
+
+    // 普通分析（非流式）
+    async function analyzeStockNormal(stock) {
+      const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock })
+      });
+      const apiResult = await response.json();
+      if (!apiResult.success) throw new Error(apiResult.error || '分析失败');
+      return apiResult.data;
+    }
+
+    // 流式分析函数
+    async function analyzeStockStream(stock) {
+      return new Promise((resolve, reject) => {
+        let fullContent = '';
+        let lastProgress = '';
+        const loadingText = document.querySelector('#loadingOverlay .loading-text');
+        
+        fetch(`${API_BASE_URL}/api/analyze-stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stock })
+        }).then(response => {
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+
+          function read() {
+            return reader.read().then(({ done, value }) => {
+              if (done) {
+                // 流结束但没收到done事件（异常）
+                console.warn('流异常结束');
+                reject(new Error('分析异常结束'));
+                return;
+              }
+
+              const chunk = decoder.decode(value);
+              const lines = chunk.split('\n');
+
+              for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                  const data = line.slice(6);
+                  
+                  if (data === '[DONE]') {
+                    return;
+                  }
+
+                  try {
+                    const parsed = JSON.parse(data);
+                    
+                    if (parsed.type === 'start') {
+                      if (loadingText) loadingText.innerHTML = `${parsed.message}<span class="loading-dots"></span>`;
+                    } else if (parsed.type === 'progress') {
+                      // 更新loading提示（显示最新生成的内容预览）
+                      lastProgress = parsed.content;
+                      if (loadingText && fullContent.length < 100) {
+                        const preview = fullContent.substring(0, 30).replace(/\n/g, ' ');
+                        loadingText.innerHTML = `正在生成分析<span class="loading-dots"></span><br><small style="font-size:11px;opacity:0.7">${preview}</small>`;
+                      }
+                      fullContent = parsed.fullContent;
+                    } else if (parsed.type === 'done') {
+                      // 分析完成
+                      console.log('✅ 流式分析完成');
+                      resolve(parsed.result);
+                      return;
+                    } else if (parsed.type === 'error') {
+                      reject(new Error(parsed.error));
+                      return;
+                    }
+                  } catch (e) {
+                    // 忽略解析错误
+                  }
+                }
+              }
+
+              return read();  // 继续读取
+            });
+          }
+
+          return read();
+        }).catch(err => {
+          console.error('流式请求失败:', err);
+          reject(err);
+        });
+      });
+    }
+
+    // 微信云开发调用
+    async function callWechatCloud(stock) {
+      return new Promise((resolve, reject) => {
+        wx.cloud.callFunction({
+          name: 'analyzeStock',
+          data: { stock: stock },
+          success: (res) => {
+            if (res.result.success) {
+              resolve(res.result.data);
+            } else {
+              reject(new Error(res.result.error));
+            }
+          },
+          fail: (err) => {
+            reject(err);
+          }
+        });
+      });
+    }
+
+    // 获取分数对应的颜色
+    function getScoreColor(score) {
+      if (score >= 70) return 'var(--success)';
+      if (score >= 40) return 'var(--warning)';
+      return 'var(--danger)';
+    }
+
+    // 获取趋势样式
+    function getTrendClass(trend) {
+      if (trend === '多头' || trend === 'bullish') return 'bullish';
+      if (trend === '空头' || trend === 'bearish') return 'bearish';
+      return 'neutral';
+    }
+
+    // 获取操作样式
+    function getActionClass(action) {
+      if (action === '买入' || action === 'buy') return 'buy';
+      if (action === '卖出' || action === 'sell') return 'sell';
+      return 'hold';
+    }
+
+    // 渲染结果
+    function renderResult(result) {
+      const resultSection = document.getElementById('resultSection');
+      
+      // 股票信息
+      document.getElementById('stockName').textContent = result.stock || result.stockName || '未知';
+      document.getElementById('stockCode').textContent = result.code || '-';
+      
+      // 趋势
+      const trendBadge = document.getElementById('trendBadge');
+      const trend = result.trend || result.trendText || '震荡';
+      trendBadge.className = `trend-badge ${getTrendClass(trend)}`;
+      document.getElementById('trendText').textContent = result.trendText || trend;
+      
+      // 综合评分
+      const score = result.overallScore || 60;
+      document.getElementById('overallScore').textContent = score;
+      
+      // 延迟动画
+      setTimeout(() => {
+        document.getElementById('scoreBarFill').style.width = score + '%';
+      }, 100);
+      
+      // 操作策略
+      const actionBadge = document.getElementById('actionBadge');
+      const action = result.action || '持有';
+      actionBadge.className = `action-badge ${getActionClass(action)}`;
+      actionBadge.textContent = action;
+      
+      document.getElementById('entryPrice').textContent = result.entryPrice || '-';
+      document.getElementById('stopLoss').textContent = result.stopLoss || '-';
+      document.getElementById('targetPrice').textContent = result.targetPrice || '-';
+      document.getElementById('actionCondition').textContent = result.actionCondition || result.suggestion || '请关注市场变化';
+      
+      // 维度分析
+      const dimensionsContainer = document.getElementById('dimensionsContainer');
+      dimensionsContainer.innerHTML = '';
+      
+      const dimensions = result.dimensions || [];
+      dimensions.forEach((dim, i) => {
+        const color = getScoreColor(dim.score);
+        const item = document.createElement('div');
+        item.className = 'dimension-item';
+        item.innerHTML = `
+          <div class="dimension-header">
+            <span class="dimension-name">${dim.name}</span>
+            <span class="dimension-score" style="color: ${color}">${dim.score}</span>
+          </div>
+          <div class="dimension-bar">
+            <div class="dimension-bar-fill" style="width: 0%; background: linear-gradient(90deg, ${color}, ${color}88)"></div>
+          </div>
+          <div class="dimension-analysis">${dim.analysis || dim.desc || ''}</div>
+        `;
+        dimensionsContainer.appendChild(item);
+        
+        // 延迟动画
+        setTimeout(() => {
+          item.querySelector('.dimension-bar-fill').style.width = dim.score + '%';
+        }, 200 + i * 100);
+      });
+      
+      // 总结
+      document.getElementById('summaryContent').textContent = result.summary || '分析完成';
+      
+      // 风险提示
+      const riskDim = dimensions.find(d => d.name === '风险提示');
+      if (riskDim) {
+        document.getElementById('riskContent').textContent = riskDim.analysis || riskDim.desc || '暂无明显风险';
+      }
+      
+      // 显示结果
+      resultSection.classList.add('show');
+      resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // 错误提示
+    function showError(message) {
+      const toast = document.getElementById('errorToast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // 回车搜索
+    document.getElementById('stockInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') analyzeStock();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "analyzeStock",
+  "version": "1.0.0",
+  "description": "股票分析云函数",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3",
+    "axios": "^1.6.0"
+  }
+}

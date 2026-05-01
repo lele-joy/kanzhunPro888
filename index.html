@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>个股扫雷 - 技术分析版</title>
+  <style>
+    :root {
+      --primary: #FF6B00;
+      --primary-light: #FF8C3A;
+      --primary-dark: #CC5500;
+      --bg-dark: #0D1117;
+      --bg-card: rgba(255, 255, 255, 0.05);
+      --bg-glass: rgba(255, 255, 255, 0.08);
+      --text-primary: #FFFFFF;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border: rgba(255, 107, 0, 0.3);
+      --success: #00D26A;
+      --warning: #FFB800;
+      --danger: #FF4757;
+      --bullish: #00D26A;
+      --bearish: #FF4757;
+      --neutral: #FFB800;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: var(--bg-dark);
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: var(--text-primary);
+    }
+
+    /* 背景动效 */
+    .bg-effects {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .bg-gradient {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.15;
+      animation: float 20s ease-in-out infinite;
+    }
+
+    .bg-gradient-1 {
+      background: var(--primary);
+      top: -200px;
+      right: -200px;
+    }
+
+    .bg-gradient-2 {
+      background: var(--primary-light);
+      bottom: -300px;
+      left: -200px;
+      animation-delay: -10s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(30px, -30px) scale(1.05); }
+      50% { transform: translate(-20px, 20px) scale(0.95); }
+      75% { transform: translate(20px, 30px) scale(1.02); }
+    }
+
+    .grid-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(255, 107, 0, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 107, 0, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+      min-height: 100vh;
+    }
+
+    /* 头部 */
+    .header {
+      text-align: center;
+      padding: 40px 0 30px;
+    }
+
+    .logo-icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 32px rgba(255, 107, 0, 0.3);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 8px 32px rgba(255, 107, 0, 0.3); }
+      50% { box-shadow: 0 8px 48px rgba(255, 107, 0, 0.5); }
+    }
+
+    .logo-icon svg {
+      width: 40px;
+      height: 40px;
+      fill: white;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--text-primary), var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* 搜索区域 */
+    .search-section {
+      margin-bottom: 24px;
+    }
+
+    .search-box {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 4px;
+      backdrop-filter: blur(20px);
+      transition: all 0.3s ease;
+    }
+
+    .search-box:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.15);
+    }
+
+    .search-box input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 16px 20px;
+      font-size: 16px;
+      color: var(--text-primary);
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border: none;
+      border-radius: 12px;
+      padding: 16px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      margin-top: 16px;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .search-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 107, 0, 0.4);
+    }
+
+    .search-btn:active {
+      transform: translateY(0);
+    }
+
+    .search-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .search-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    /* 快捷搜索标签 */
+    .quick-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .quick-tag {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .quick-tag:hover {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* 分析结果区域 */
+    .result-section {
+      display: none;
+      animation: slideUp 0.5s ease;
+    }
+
+    .result-section.show {
+      display: block;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 股票信息卡片 */
+    .stock-info {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(20px);
+    }
+
+    .stock-info-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .stock-name {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .stock-code {
+      font-size: 13px;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-left: 8px;
+    }
+
+    .stock-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* 趋势标签 */
+    .trend-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .trend-badge.bullish {
+      background: rgba(0, 210, 106, 0.15);
+      color: var(--bullish);
+    }
+
+    .trend-badge.bearish {
+      background: rgba(255, 71, 87, 0.15);
+      color: var(--bearish);
+    }
+
+    .trend-badge.neutral {
+      background: rgba(255, 184, 0, 0.15);
+      color: var(--neutral);
+    }
+
+    .trend-badge svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* 综合评分 */
+    .overall-score {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .score-label {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .score-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .score-bar {
+      flex: 1;
+      height: 8px;
+      background: var(--bg-glass);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--danger), var(--warning), var(--success));
+      transition: width 1s ease;
+    }
+
+    /* 操作策略卡片 */
+    .action-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(20px);
+    }
+
+    .action-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .action-title {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .action-title svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--primary);
+    }
+
+    .action-badge {
+      padding: 8px 20px;
+      border-radius: 24px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .action-badge.buy {
+      background: rgba(0, 210, 106, 0.2);
+      color: var(--success);
+      border: 2px solid var(--success);
+    }
+
+    .action-badge.sell {
+      background: rgba(255, 71, 87, 0.2);
+      color: var(--danger);
+      border: 2px solid var(--danger);
+    }
+
+    .action-badge.hold {
+      background: rgba(255, 184, 0, 0.2);
+      color: var(--warning);
+      border: 2px solid var(--warning);
+    }
+
+    .action-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .action-item {
+      background: var(--bg-card);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .action-item-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .action-item-value {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .action-condition {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--bg-card);
+      border-radius: 10px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* 维度分析 */
+    .dimensions-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(20px);
+    }
+
+    .dimensions-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dimensions-title svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--primary);
+    }
+
+    .dimension-item {
+      margin-bottom: 14px;
+    }
+
+    .dimension-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .dimension-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .dimension-name {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .dimension-score {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .dimension-bar {
+      height: 6px;
+      background: var(--bg-glass);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .dimension-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.8s ease;
+    }
+
+    .dimension-analysis {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      line-height: 1.5;
+    }
+
+    /* 总结报告 */
+    .summary-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(20px);
+    }
+
+    .summary-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .summary-title svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--primary);
+    }
+
+    .summary-content {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+
+    /* 风险提示 */
+    .risk-card {
+      background: rgba(255, 71, 87, 0.08);
+      border: 1px solid rgba(255, 71, 87, 0.2);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .risk-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--danger);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .risk-title svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--danger);
+    }
+
+    .risk-content {
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+    }
+
+    /* 免责声明 */
+    .disclaimer {
+      margin-top: 24px;
+      padding: 16px;
+      background: rgba(255, 107, 0, 0.08);
+      border: 1px solid rgba(255, 107, 0, 0.2);
+      border-radius: 12px;
+    }
+
+    .disclaimer p {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* 加载动画 */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(13, 17, 23, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .loading-overlay.show {
+      display: flex;
+    }
+
+    .loading-content {
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 20px;
+      position: relative;
+    }
+
+    .loading-spinner::before,
+    .loading-spinner::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+    }
+
+    .loading-spinner::before {
+      width: 100%;
+      height: 100%;
+      border: 3px solid transparent;
+      border-top-color: var(--primary);
+      animation: spin 1s linear infinite;
+    }
+
+    .loading-spinner::after {
+      width: 80%;
+      height: 80%;
+      top: 10%;
+      left: 10%;
+      border: 3px solid transparent;
+      border-bottom-color: var(--primary-light);
+      animation: spin 0.8s linear infinite reverse;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .loading-stock {
+      color: var(--primary);
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    /* 错误提示 */
+    .error-toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: var(--danger);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 200;
+      transition: transform 0.3s ease;
+    }
+
+    .error-toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Demo提示 */
+    .demo-hint {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <!-- 背景动效 -->
+  <div class="bg-effects">
+    <div class="bg-gradient bg-gradient-1"></div>
+    <div class="bg-gradient bg-gradient-2"></div>
+    <div class="grid-bg"></div>
+  </div>
+
+  <div class="container">
+    <!-- 头部 -->
+    <div class="header">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3.5 18.5l6-6 4 4 8-8v3l-8 8-4-4-6 6V18.5z"/>
+          <path d="M9.5 9.5L12 12"/>
+        </svg>
+      </div>
+      <h1>个股扫雷</h1>
+      <p>技术分析 · 智能研判</p>
+    </div>
+
+    <!-- 搜索区域 -->
+    <div class="search-section">
+      <div class="search-box">
+        <input type="text" id="stockInput" placeholder="输入股票名称或代码，如：上证指数 / 贵州茅台" autocomplete="off">
+      </div>
+      
+      <button class="search-btn" id="analyzeBtn" onclick="analyzeStock()">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/>
+        </svg>
+        <span>开始分析</span>
+      </button>
+
+      <div class="quick-tags">
+        <span class="quick-tag" onclick="quickSelect('大盘')">大盘研判</span>
+        <span class="quick-tag" onclick="quickSelect('上证指数')">上证指数</span>
+        <span class="quick-tag" onclick="quickSelect('创业板')">创业板</span>
+        <span class="quick-tag" onclick="quickSelect('贵州茅台')">贵州茅台</span>
+        <span class="quick-tag" onclick="quickSelect('宁德时代')">宁德时代</span>
+      </div>
+    </div>
+
+    <!-- 分析结果区域 -->
+    <div class="result-section" id="resultSection">
+      
+      <!-- 股票信息 -->
+      <div class="stock-info">
+        <div class="stock-info-header">
+          <div class="stock-meta">
+            <span class="stock-name" id="stockName">大盘</span>
+            <span class="stock-code" id="stockCode">-</span>
+          </div>
+          <div class="trend-badge neutral" id="trendBadge">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2v20M2 12l10 10 10-10"/>
+            </svg>
+            <span id="trendText">震荡</span>
+          </div>
+        </div>
+        <div class="overall-score">
+          <span class="score-label">综合评分</span>
+          <span class="score-value" id="overallScore">60</span>
+          <div class="score-bar">
+            <div class="score-bar-fill" id="scoreBarFill" style="width: 60%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作策略 -->
+      <div class="action-card">
+        <div class="action-header">
+          <div class="action-title">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+            操作策略
+          </div>
+          <div class="action-badge hold" id="actionBadge">持有</div>
+        </div>
+        <div class="action-details">
+          <div class="action-item">
+            <div class="action-item-label">入场价</div>
+            <div class="action-item-value" id="entryPrice">-</div>
+          </div>
+          <div class="action-item">
+            <div class="action-item-label">止损价</div>
+            <div class="action-item-value" id="stopLoss" style="color: var(--danger);">-</div>
+          </div>
+          <div class="action-item">
+            <div class="action-item-label">目标价</div>
+            <div class="action-item-value" id="targetPrice">-</div>
+          </div>
+        </div>
+        <div class="action-condition" id="actionCondition">
+          请查看分析详情
+        </div>
+      </div>
+
+      <!-- 维度分析 -->
+      <div class="dimensions-card">
+        <div class="dimensions-title">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 3v18h18M9 17V9m4 8V5m4 12v-6"/>
+          </svg>
+          六维技术分析
+        </div>
+        <div id="dimensionsContainer">
+          <!-- 动态生成 -->
+        </div>
+      </div>
+
+      <!-- 总结报告 -->
+      <div class="summary-card">
+        <div class="summary-title">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>
+          </svg>
+          综合研判
+        </div>
+        <div class="summary-content" id="summaryContent">
+          分析中...
+        </div>
+      </div>
+
+      <!-- 风险提示 -->
+      <div class="risk-card" id="riskCard">
+        <div class="risk-title">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
+          </svg>
+          风险提示
+        </div>
+        <div class="risk-content" id="riskContent">
+          暂无风险提示
+        </div>
+      </div>
+
+      <!-- 免责声明 -->
+      <div class="disclaimer">
+        <p>免责声明：本工具基于 AI 技术分析，仅供参考和学习交流使用，不构成任何投资建议。投资有风险，决策需谨慎，请根据自身情况做出判断。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 加载动画 -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-content">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">AI 正在分析中...</div>
+      <div class="loading-stock" id="loadingStock">大盘</div>
+    </div>
+  </div>
+
+  <!-- 错误提示 -->
+  <div class="error-toast" id="errorToast"></div>
+
+  <script>
+    // ==================== API 配置 ====================
+    const USE_DEMO_MODE = false;
+    const API_BASE_URL = window.location.origin;
+    
+    // ==================== 模拟数据 ====================
+    const mockResults = {
+      '大盘': {
+        stock: '上证指数',
+        code: '000001',
+        trend: 'bullish',
+        trendText: '多头',
+        overallScore: 68,
+        dimensions: [
+          { name: '大盘研判', score: 72, analysis: '指数突破均线压制，短期趋势向好，上方关注3400压力' },
+          { name: '量能分析', score: 65, analysis: '成交量温和放大，量价配合良好，但需观察持续性' },
+          { name: '板块轮动', score: 70, analysis: '科技、消费板块轮动，资金活跃度提升' },
+          { name: '个股分析', score: 68, analysis: '结构性行情为主，精选个股机会' },
+          { name: '操作策略', score: 70, analysis: '轻仓参与，控制仓位在5成以内' },
+          { name: '风险提示', score: 40, analysis: '外围市场波动、地缘政治风险仍需关注' }
+        ],
+        summary: '市场短期维持震荡偏强格局，结构性机会可期。建议控制仓位，精选热点板块个股为主。',
+        action: '持有',
+        actionCondition: '等待回调确认后可考虑加仓，严格止损',
+        entryPrice: '观望',
+        stopLoss: '-',
+        targetPrice: '-'
+      }
+    };
+
+    // 快捷选择
+    function quickSelect(stock) {
+      document.getElementById('stockInput').value = stock;
+      analyzeStock();
+    }
+
+    // 分析股票
+    async function analyzeStock() {
+      const input = document.getElementById('stockInput').value.trim() || '大盘';
+      
+      // 显示加载
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      const loadingStock = document.getElementById('loadingStock');
+      loadingStock.textContent = input;
+      loadingOverlay.classList.add('show');
+
+      try {
+        let result;
+        
+        if (USE_DEMO_MODE) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          result = mockResults[input] || mockResults['大盘'];
+        } else {
+          const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ stock: input })
+          });
+
+          const apiResult = await response.json();
+          if (!apiResult.success) throw new Error(apiResult.error || '分析失败');
+          result = apiResult.data;
+        }
+
+        renderResult(result);
+      } catch (error) {
+        console.error('分析失败:', error);
+        showError(error.message || '网络错误，请稍后重试');
+        renderResult(mockResults['大盘']);
+      }
+
+      loadingOverlay.classList.remove('show');
+    }
+
+    // 获取分数对应的颜色
+    function getScoreColor(score) {
+      if (score >= 70) return 'var(--success)';
+      if (score >= 40) return 'var(--warning)';
+      return 'var(--danger)';
+    }
+
+    // 获取趋势样式
+    function getTrendClass(trend) {
+      if (trend === '多头' || trend === 'bullish') return 'bullish';
+      if (trend === '空头' || trend === 'bearish') return 'bearish';
+      return 'neutral';
+    }
+
+    // 获取操作样式
+    function getActionClass(action) {
+      if (action === '买入' || action === '买入' || action === 'buy') return 'buy';
+      if (action === '卖出' || action === 'sell') return 'sell';
+      return 'hold';
+    }
+
+    // 渲染结果
+    function renderResult(result) {
+      const resultSection = document.getElementById('resultSection');
+      
+      // 股票信息
+      document.getElementById('stockName').textContent = result.stock || result.stockName || '未知';
+      document.getElementById('stockCode').textContent = result.code || '-';
+      
+      // 趋势
+      const trendBadge = document.getElementById('trendBadge');
+      const trend = result.trend || result.trendText || '震荡';
+      trendBadge.className = `trend-badge ${getTrendClass(trend)}`;
+      document.getElementById('trendText').textContent = result.trendText || trend;
+      
+      // 综合评分
+      const score = result.overallScore || 60;
+      document.getElementById('overallScore').textContent = score;
+      document.getElementById('scoreBarFill').style.width = score + '%';
+      
+      // 操作策略
+      const actionBadge = document.getElementById('actionBadge');
+      const action = result.action || '持有';
+      actionBadge.className = `action-badge ${getActionClass(action)}`;
+      actionBadge.textContent = action;
+      
+      document.getElementById('entryPrice').textContent = result.entryPrice || '-';
+      document.getElementById('stopLoss').textContent = result.stopLoss || '-';
+      document.getElementById('targetPrice').textContent = result.targetPrice || '-';
+      document.getElementById('actionCondition').textContent = result.actionCondition || result.suggestion || '请关注市场变化';
+      
+      // 维度分析
+      const dimensionsContainer = document.getElementById('dimensionsContainer');
+      dimensionsContainer.innerHTML = '';
+      
+      const dimensions = result.dimensions || [];
+      dimensions.forEach((dim, i) => {
+        const color = getScoreColor(dim.score);
+        const item = document.createElement('div');
+        item.className = 'dimension-item';
+        item.innerHTML = `
+          <div class="dimension-header">
+            <span class="dimension-name">${dim.name}</span>
+            <span class="dimension-score" style="color: ${color}">${dim.score}</span>
+          </div>
+          <div class="dimension-bar">
+            <div class="dimension-bar-fill" style="width: 0%; background: ${color}"></div>
+          </div>
+          <div class="dimension-analysis">${dim.analysis || dim.desc || ''}</div>
+        `;
+        dimensionsContainer.appendChild(item);
+        
+        // 延迟动画
+        setTimeout(() => {
+          item.querySelector('.dimension-bar-fill').style.width = dim.score + '%';
+        }, 200 + i * 100);
+      });
+      
+      // 总结
+      document.getElementById('summaryContent').textContent = result.summary || '分析完成';
+      
+      // 风险提示
+      const riskDim = dimensions.find(d => d.name === '风险提示');
+      if (riskDim) {
+        document.getElementById('riskContent').textContent = riskDim.analysis || riskDim.desc || '暂无明显风险';
+      }
+      
+      // 显示结果
+      resultSection.classList.add('show');
+      resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // 错误提示
+    function showError(message) {
+      const toast = document.getElementById('errorToast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // 回车搜索
+    document.getElementById('stockInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') analyzeStock();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "openapi": []
+  },
+  "environments": [
+    {
+      "name": "MINIMAX_API_KEY",
+      "value": "your_api_key_here"
+    }
+  ]
+}
