@@ -26,6 +26,8 @@ jobs:
       run: |
         npm install -g @cloudbase/cli
         printf "Y\n$TCB_SECRETID\n$TCB_SECRETKEY\n" | tcb login --key
-        cd cloud-functions/analyzeStock && tcb fn deploy analyzeStock -e $TCB_ENV_ID
+        cd $GITHUB_WORKSPACE/cloud-functions/analyzeStock
+        tcb fn deploy analyzeStock -e $TCB_ENV_ID
+        cd $GITHUB_WORKSPACE
         tcb hosting deploy H5页面/index.html -e $TCB_ENV_ID
         echo "🎉 部署完成！"
